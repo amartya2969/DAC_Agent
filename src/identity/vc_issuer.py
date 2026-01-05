@@ -240,12 +240,18 @@ class VCIssuer:
         public_key_bytes = self.did_manager.get_public_key_from_did(issuer_did)
         public_key = ed25519.Ed25519PublicKey.from_public_bytes(public_key_bytes)
 
-        # Verify signature
+        # Verify signature with clock skew tolerance
         try:
             payload = jwt.decode(
                 vc_jwt,
                 public_key,
-                algorithms=["EdDSA"]
+                algorithms=["EdDSA"],
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_iat": True,
+                    "leeway": 10  # Allow 10 seconds of clock skew
+                }
             )
         except jwt.ExpiredSignatureError:
             raise ValueError("VC has expired")
