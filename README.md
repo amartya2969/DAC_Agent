@@ -1,70 +1,94 @@
-# OAuth 2.1 Agent Authentication Flow - Dynamic Access Control
+# Agentic AI Identity Management Framework
 
-A proof-of-concept implementation demonstrating how AI agents authenticate and access resources on behalf of users, with distinct identities for both the user and the agent.
+A Zero-Trust Identity and Access Management (IAM) framework for Multi-Agent Systems (MAS) that enables secure authentication, authorization, and lifecycle management of AI agents using decentralized identity primitives.
 
 ## Overview
 
-This project implements the OAuth 2.1 Agent Authentication Flow, a specialized authorization pattern designed for AI agents that need to act on behalf of users while maintaining separate identities. This enables:
+This framework provides a complete identity and access control solution for AI agents, supporting:
 
-- **Distinct Identity Management**: Separate authentication and authorization for users and agents
-- **Dynamic Access Control**: Fine-grained permission management based on user consent and agent capabilities
-- **Secure Token Management**: Support for access tokens, refresh tokens, and token revocation
-- **Scope-based Permissions**: Granular control over what resources agents can access
+- **Decentralized Identity (DIDs)**: Unique, verifiable identifiers for agents
+- **Verifiable Credentials (VCs)**: Cryptographically-signed claims about agent capabilities
+- **Agent Naming Service (ANS)**: DNS-like discovery for finding agents by capability
+- **Dynamic Access Control**: Policy-based authorization with Open Policy Agent
+- **Global Session Management**: Cross-protocol session control with instant revocation
+- **Audit Trail**: Complete attribution of all agent actions
 
-## Key Features
+## Architecture - 4 Core Layers
 
-- ✅ OAuth 2.1 compliant authorization server
-- ✅ Agent authentication and authorization flow
-- ✅ User consent management
-- ✅ Refresh token support with rotation
-- ✅ Token revocation (access and refresh tokens)
-- ✅ Scope-based access control
-- ✅ Resource server with protected endpoints
-- ✅ SQLite database (easily upgradeable to PostgreSQL)
+### Layer 1: Identity & Credential Management
+- **DID Manager**: Create, resolve, and manage Decentralized Identifiers
+- **VC Issuer/Verifier**: Issue and verify Verifiable Credentials
+- **Agent Wallet**: Secure storage for keys and credentials
 
-## Architecture Components
+### Layer 2: Agent Discovery & Trust (ANS)
+- **ANS Registry**: Store and index agent registrations
+- **ANS Resolver**: Query agents by capability, protocol, version
+- **Trust Framework**: Maintain trusted credential issuers
 
-1. **Authorization Server**: Handles user authentication, agent registration, and token issuance
-2. **Resource Server**: Hosts protected resources accessible by authorized agents
-3. **Agent Client**: Example AI agent that requests access on behalf of users
-4. **Database**: SQLite database storing users, agents, tokens, and consent records
+### Layer 3: Dynamic Access Control
+- **Policy Decision Point (PDP)**: Evaluate access using policies
+- **Policy Information Point (PIP)**: Gather agent and resource attributes
+- **JIT Credential Service**: Issue short-lived, scoped credentials
+
+### Layer 4: Global Session Management
+- **Session Authority (SA)**: Coordinate global session state
+- **Session State Synchronizer (SSS)**: Distributed session registry
+- **Adapter Enforcement Middleware (AEM)**: Protocol-specific enforcement
 
 ## Technology Stack
 
-- **Language**: Python 3.9+
-- **Web Framework**: Flask
-- **Database**: SQLite (production-ready for PostgreSQL migration)
-- **Authentication**: JWT (JSON Web Tokens)
-- **Security**: cryptography, secrets, hashlib
+- **Language**: Python 3.11+
+- **DID/VC**: Custom implementation for did:key method
+- **Policy Engine**: Open Policy Agent (OPA) with Rego
+- **Session Store**: Redis
+- **Database**: SQLite/PostgreSQL for ANS registry
+- **Crypto**: Ed25519 signatures
+- **API**: Flask REST API
 
 ## Project Structure
 
 ```
 DAC_Agent/
 ├── docs/
-│   ├── ARCHITECTURE.md          # System architecture and design
-│   ├── OAUTH_FLOW.md           # OAuth 2.1 Agent Authentication Flow details
-│   ├── API_SPECIFICATION.md    # Complete API documentation
-│   ├── DATABASE_SCHEMA.md      # Database schema and design
-│   └── IMPLEMENTATION_PLAN.md  # Step-by-step implementation guide
+│   ├── ARCHITECTURE.md
+│   ├── DID_SPECIFICATION.md
+│   ├── VC_SPECIFICATION.md
+│   ├── ANS_SPECIFICATION.md
+│   └── IMPLEMENTATION_PLAN.md
 ├── src/
-│   ├── auth_server/            # Authorization server implementation
-│   ├── resource_server/        # Resource server implementation
-│   ├── agent_client/           # Example agent client
-│   ├── models/                 # Database models
-│   └── utils/                  # Shared utilities
-├── tests/                      # Test suite
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
+│   ├── identity/
+│   │   ├── did_manager.py
+│   │   ├── vc_issuer.py
+│   │   └── agent_wallet.py
+│   ├── ans/
+│   │   ├── registry.py
+│   │   └── resolver.py
+│   ├── policy/
+│   │   ├── pdp.py
+│   │   └── pip.py
+│   ├── session/
+│   │   ├── session_authority.py
+│   │   └── session_store.py
+│   ├── adapters/
+│   │   └── http_aem.py
+│   ├── services/
+│   │   ├── did_service.py
+│   │   ├── ans_service.py
+│   │   └── session_service.py
+│   ├── models/
+│   └── cli/
+├── scripts/
+│   └── init_db.py
+└── README.md
 ```
 
 ## Quick Start
 
 ### Prerequisites
 
-- Python 3.9 or higher
+- Python 3.11 or higher
+- Redis server
 - pip (Python package manager)
-- Virtual environment (recommended)
 
 ### Installation
 
@@ -80,86 +104,135 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Set up environment
+cp .env.example .env
+
 # Initialize database
 python scripts/init_db.py
 
-# Run the authorization server
-python -m src.auth_server.app
+# Start Redis (in separate terminal)
+redis-server
 
-# In another terminal, run the resource server
-python -m src.resource_server.app
-
-# In another terminal, run the example agent
-python -m src.agent_client.example_agent
+# Run the framework
+python -m src.main
 ```
 
 ## Usage Example
 
 ```python
-from src.agent_client import AgentClient
+from src.identity.did_manager import DIDManager
+from src.identity.vc_issuer import VCIssuer
+from src.ans.registry import ANSRegistry
 
-# Initialize agent
-agent = AgentClient(
-    agent_id="my-ai-agent",
-    client_secret="agent-secret"
+# Create agent identity
+did_manager = DIDManager()
+agent_did = did_manager.create_did("agent-alpha")
+
+# Issue capability credential
+vc_issuer = VCIssuer()
+capability_vc = vc_issuer.issue_capability_vc(
+    subject_did=agent_did,
+    capability="FinancialAnalysis",
+    issuer_did="did:key:z6Mk..."
 )
 
-# Request user authorization
-auth_url = agent.get_authorization_url(
-    user_id="user@example.com",
-    scopes=["read:profile", "write:documents"]
+# Register with ANS
+ans = ANSRegistry()
+ans.register(
+    ans_name="financial://agent-alpha.analysis.acme.v1",
+    agent_did=agent_did,
+    capabilities=["FinancialAnalysis"],
+    service_endpoint="https://api.example.com/agent"
 )
 
-# User visits auth_url and grants consent
-
-# Exchange authorization code for tokens
-tokens = agent.exchange_code(authorization_code)
-
-# Access protected resources
-response = agent.access_resource(
-    url="https://api.example.com/user/profile",
-    access_token=tokens["access_token"]
-)
-
-# Refresh tokens when needed
-new_tokens = agent.refresh_access_token(tokens["refresh_token"])
-
-# Revoke tokens when done
-agent.revoke_token(tokens["access_token"])
+# Discover agents by capability
+agents = ans.resolve_by_capability("FinancialAnalysis")
 ```
+
+## Core Workflows
+
+### 1. Agent Registration
+1. Generate DID and keypair
+2. Create DID Document with metadata
+3. Request capability VCs from issuers
+4. Register with ANS
+5. Store credentials in wallet
+
+### 2. Agent Authorization
+1. Agent presents DID + VCs to resource
+2. PDP validates credentials and evaluates policy
+3. Create global session if authorized
+4. Grant access to resource
+
+### 3. Global Revocation
+1. Revocation triggered (compromise, violation)
+2. Session Authority terminates all sessions
+3. AEMs enforce termination across protocols
+4. Update ANS and VC status lists
+
+### 4. JIT Credential Delegation
+1. Orchestrator queries ANS for suitable agent
+2. Issues short-lived, scoped VC
+3. Ephemeral agent presents VC for access
+4. VC expires after use
+
+## CLI Tool
+
+```bash
+# Register new agent
+python -m src.cli agent register --name agent-alpha --model gpt-4
+
+# Issue capability credential
+python -m src.cli vc issue --subject did:key:z6Mk... --capability FinancialAnalysis
+
+# Query ANS
+python -m src.cli ans resolve --capability FinancialAnalysis
+
+# Check session status
+python -m src.cli session status --did did:key:z6Mk...
+
+# Revoke agent access
+python -m src.cli agent revoke --did did:key:z6Mk...
+```
+
+## Phase 1 MVP (Current)
+
+✅ DID creation and resolution (did:key method)
+✅ Basic VC issuance and verification
+✅ ANS registry with capability search
+✅ PDP with hardcoded policies
+✅ Session management with Redis
+✅ HTTP AEM adapter
+✅ Demo CLI
 
 ## Security Considerations
 
-This is a **proof-of-concept** implementation for demonstration and learning purposes. For production use, consider:
-
-- Using HTTPS/TLS for all communications
-- Implementing rate limiting and brute force protection
-- Adding comprehensive logging and monitoring
-- Using a production-grade database (PostgreSQL)
-- Implementing proper secret management (environment variables, secret managers)
-- Adding CSRF protection
-- Implementing PKCE (Proof Key for Code Exchange)
-- Regular security audits
+- All keys use Ed25519 cryptography
+- DIDs and VCs follow W3C standards
+- Session state is distributed and fault-tolerant
+- Comprehensive audit logging with DID attribution
+- Rate limiting on all public endpoints
+- Input validation and sanitization
 
 ## Documentation
 
-- [Architecture Overview](docs/ARCHITECTURE.md) - System design and component interactions
-- [OAuth 2.1 Agent Flow](docs/OAUTH_FLOW.md) - Detailed flow diagrams and specifications
-- [API Specification](docs/API_SPECIFICATION.md) - Complete API reference
-- [Database Schema](docs/DATABASE_SCHEMA.md) - Database design and relationships
-- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) - Development roadmap
+- [Architecture Overview](docs/ARCHITECTURE.md)
+- [DID Specification](docs/DID_SPECIFICATION.md)
+- [Verifiable Credentials](docs/VC_SPECIFICATION.md)
+- [Agent Naming Service](docs/ANS_SPECIFICATION.md)
+- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License
 
 ## Contributing
 
-Contributions are welcome! Please read CONTRIBUTING.md for guidelines.
+Contributions welcome! This is a research prototype for exploring decentralized identity in multi-agent systems.
 
 ## References
 
-- [OAuth 2.1 Draft Specification](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-07)
-- [RFC 6749 - OAuth 2.0 Framework](https://datatracker.ietf.org/doc/html/rfc6749)
-- [RFC 7009 - Token Revocation](https://datatracker.ietf.org/doc/html/rfc7009)
-- [RFC 7662 - Token Introspection](https://datatracker.ietf.org/doc/html/rfc7662)
+- [W3C DID Core](https://www.w3.org/TR/did-core/)
+- [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/)
+- [DID Method Specifications](https://w3c.github.io/did-spec-registries/)
+- [Open Policy Agent](https://www.openpolicyagent.org/)

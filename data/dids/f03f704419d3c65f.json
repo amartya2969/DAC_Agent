@@ -1,0 +1,45 @@
+{
+  "did": "did:key:z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96",
+  "document": {
+    "@context": [
+      "https://www.w3.org/ns/did/v1",
+      "https://w3id.org/security/suites/ed25519-2020/v1"
+    ],
+    "id": "did:key:z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96",
+    "verificationMethod": [
+      {
+        "id": "did:key:z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96#z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96",
+        "type": "Ed25519VerificationKey2020",
+        "controller": "did:key:z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96",
+        "publicKeyMultibase": "z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96"
+      }
+    ],
+    "authentication": [
+      "did:key:z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96#z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96"
+    ],
+    "assertionMethod": [
+      "did:key:z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96#z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96"
+    ],
+    "capabilityInvocation": [
+      "did:key:z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96#z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96"
+    ],
+    "capabilityDelegation": [
+      "did:key:z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96#z6MkjSohymEhX4knaiFcnhm3BVgjMFwpUSPEox4AVdQLmu96"
+    ],
+    "agentMetadata": {
+      "name": "Agent Beta - Data Processor",
+      "model": "claude-3-opus",
+      "version": "1.0",
+      "provider": "ACME Corp",
+      "capabilities": [
+        "DataProcessing",
+        "DataTransformation"
+      ],
+      "toolset": [],
+      "scopeOfBehavior": "Processes and transforms large datasets"
+    },
+    "lifecycleStatus": "active",
+    "created": "2026-01-05T05:55:10.699057Z",
+    "updated": "2026-01-05T05:55:10.699060Z"
+  }
+}

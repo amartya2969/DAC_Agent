@@ -1,0 +1,42 @@
+{
+  "did": "did:key:z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj",
+  "document": {
+    "@context": [
+      "https://www.w3.org/ns/did/v1",
+      "https://w3id.org/security/suites/ed25519-2020/v1"
+    ],
+    "id": "did:key:z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj",
+    "verificationMethod": [
+      {
+        "id": "did:key:z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj#z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj",
+        "type": "Ed25519VerificationKey2020",
+        "controller": "did:key:z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj",
+        "publicKeyMultibase": "z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj"
+      }
+    ],
+    "authentication": [
+      "did:key:z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj#z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj"
+    ],
+    "assertionMethod": [
+      "did:key:z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj#z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj"
+    ],
+    "capabilityInvocation": [
+      "did:key:z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj#z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj"
+    ],
+    "capabilityDelegation": [
+      "did:key:z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj#z6MkiURjuTCjY3r4Am9mefkFvs4g1TRVgjSepEajNUfiN1hj"
+    ],
+    "agentMetadata": {
+      "name": "Ephemeral Task Agent",
+      "model": "gpt-3.5-turbo",
+      "version": "1.0",
+      "provider": "ACME Corp",
+      "capabilities": [],
+      "toolset": [],
+      "scopeOfBehavior": ""
+    },
+    "lifecycleStatus": "active",
+    "created": "2026-01-05T05:55:10.745188Z",
+    "updated": "2026-01-05T05:55:10.745192Z"
+  }
+}

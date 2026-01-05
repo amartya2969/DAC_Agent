@@ -5,10 +5,13 @@ Flask-CORS==4.0.0
 # Database
 SQLAlchemy==2.0.23
 
-# Security
+# Session Store
+redis==5.0.1
+
+# Security & Cryptography
 cryptography==41.0.7
 PyJWT==2.8.0
-bcrypt==4.1.2
+base58==2.1.1
 
 # HTTP Client
 requests==2.31.0
@@ -17,9 +20,10 @@ requests==2.31.0
 python-dotenv==1.0.0
 click==8.1.7
 
+# Policy Engine (OPA integration)
+py-opa==0.3.0
+
 # Development
-pytest==7.4.3
-pytest-cov==4.1.0
 black==23.12.1
 flake8==6.1.0
 
