@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Dashboard - Agentic AI Identity Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #60a5fa;
+            margin-bottom: 0.25rem;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            border-color: #60a5fa;
+        }
+
+        .stat-card h3 {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            color: #60a5fa;
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-card .label {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        .section-header h2 {
+            color: #f1f5f9;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #2563eb;
+        }
+
+        .revoke-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .revoke-btn:hover {
+            background: #b91c1c;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: #0f172a;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid #334155;
+            font-size: 0.875rem;
+        }
+
+        tbody tr:hover {
+            background: #0f172a;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #065f46;
+            color: #6ee7b7;
+        }
+
+        .badge-warning {
+            background: #92400e;
+            color: #fbbf24;
+        }
+
+        .badge-error {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        .badge-info {
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        .capability-tag {
+            display: inline-block;
+            background: #1e3a8a;
+            color: #93c5fd;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .did-text {
+            font-family: 'Courier New', monospace;
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        .tab {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            color: #94a3b8;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #e2e8f0;
+        }
+
+        .tab.active {
+            color: #60a5fa;
+            border-bottom-color: #60a5fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Agentic AI Identity Management</h1>
+        <p>Enterprise Dashboard - Real-time monitoring, session management, and audit trail</p>
+    </div>
+
+    <div class="container">
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Agents</h3>
+                <div class="value" id="total-agents">-</div>
+                <div class="label">Registered DIDs</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Sessions</h3>
+                <div class="value" id="active-sessions">-</div>
+                <div class="label">Currently running</div>
+            </div>
+            <div class="stat-card">
+                <h3>ANS Registrations</h3>
+                <div class="value" id="ans-registrations">-</div>
+                <div class="label">Discoverable agents</div>
+            </div>
+            <div class="stat-card">
+                <h3>Events (24h)</h3>
+                <div class="value" id="events-24h">-</div>
+                <div class="label">Audit log entries</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('agents')">Agents</div>
+            <div class="tab" onclick="switchTab('sessions')">Sessions</div>
+            <div class="tab" onclick="switchTab('audit')">Audit Logs</div>
+            <div class="tab" onclick="switchTab('ans')">ANS Registry</div>
+            <div class="tab" onclick="switchTab('cloud')">Cloud Credentials</div>
+        </div>
+
+        <!-- Agents Tab -->
+        <div id="agents-tab" class="tab-content active">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Registered Agents</h2>
+                    <button class="refresh-btn" onclick="loadAgents()">Refresh</button>
+                </div>
+                <div id="agents-content" class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Sessions Tab -->
+        <div id="sessions-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Active Sessions</h2>
+                    <button class="refresh-btn" onclick="loadSessions()">Refresh</button>
+                </div>
+                <div id="sessions-content" class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Audit Logs Tab -->
+        <div id="audit-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Audit Trail (Last 100 Events)</h2>
+                    <button class="refresh-btn" onclick="loadAuditLogs()">Refresh</button>
+                </div>
+                <div id="audit-content" class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <!-- ANS Registry Tab -->
+        <div id="ans-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Agent Naming Service (ANS)</h2>
+                    <button class="refresh-btn" onclick="loadANSRegistry()">Refresh</button>
+                </div>
+                <div id="ans-content" class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Cloud Credentials Tab -->
+        <div id="cloud-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Cached Cloud Credentials</h2>
+                    <button class="refresh-btn" onclick="loadCloudCredentials()">Refresh</button>
+                </div>
+                <div id="cloud-content" class="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Switch between tabs
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            // Load data for the tab
+            if (tabName === 'agents') loadAgents();
+            if (tabName === 'sessions') loadSessions();
+            if (tabName === 'audit') loadAuditLogs();
+            if (tabName === 'ans') loadANSRegistry();
+            if (tabName === 'cloud') loadCloudCredentials();
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                document.getElementById('total-agents').textContent = data.total_agents;
+                document.getElementById('active-sessions').textContent = data.active_sessions;
+                document.getElementById('ans-registrations').textContent = data.ans_registrations;
+                document.getElementById('events-24h').textContent = data.events_24h;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load agents
+        async function loadAgents() {
+            try {
+                const response = await fetch('/api/agents');
+                const data = await response.json();
+
+                if (data.agents.length === 0) {
+                    document.getElementById('agents-content').innerHTML = '<div class="empty-state">No agents registered yet</div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Agent Name</th><th>DID</th><th>Model</th><th>Provider</th><th>Capabilities</th></tr></thead><tbody>';
+
+                data.agents.forEach(agent => {
+                    const capabilities = agent.capabilities.map(c => `<span class="capability-tag">${c}</span>`).join('');
+                    html += `
+                        <tr>
+                            <td><strong>${agent.name}</strong></td>
+                            <td class="did-text">${agent.did.substring(0, 60)}...</td>
+                            <td>${agent.model}</td>
+                            <td>${agent.provider}</td>
+                            <td>${capabilities}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('agents-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('agents-content').innerHTML = '<div class="empty-state">Error loading agents</div>';
+            }
+        }
+
+        // Load sessions
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/sessions');
+                const data = await response.json();
+
+                if (data.sessions.length === 0) {
+                    document.getElementById('sessions-content').innerHTML = '<div class="empty-state">No active sessions</div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Session ID</th><th>Agent DID</th><th>Status</th><th>Expires At</th><th>Capabilities</th><th>Actions</th></tr></thead><tbody>';
+
+                data.sessions.forEach(session => {
+                    const statusBadge = session.status === 'ACTIVE' ? 'badge-success' : 'badge-error';
+                    const capabilities = session.capabilities.map(c => `<span class="capability-tag">${c}</span>`).join('');
+
+                    html += `
+                        <tr>
+                            <td class="did-text">${session.session_id.substring(0, 16)}...</td>
+                            <td class="did-text">${session.agent_did}</td>
+                            <td><span class="badge ${statusBadge}">${session.status}</span></td>
+                            <td>${session.expires_at}</td>
+                            <td>${capabilities}</td>
+                            <td>
+                                ${session.status === 'ACTIVE' ? `<button class="revoke-btn" onclick="revokeSession('${session.session_id}')">Revoke</button>` : '-'}
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('sessions-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('sessions-content').innerHTML = '<div class="empty-state">Error loading sessions</div>';
+            }
+        }
+
+        // Revoke session
+        async function revokeSession(sessionId) {
+            if (!confirm('Are you sure you want to revoke this session? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/sessions/${sessionId}/revoke`, { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Session revoked successfully');
+                    loadSessions();
+                    loadStats();
+                } else {
+                    alert('Failed to revoke session: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error revoking session: ' + error.message);
+            }
+        }
+
+        // Load audit logs
+        async function loadAuditLogs() {
+            try {
+                const response = await fetch('/api/audit-logs');
+                const data = await response.json();
+
+                if (data.logs.length === 0) {
+                    document.getElementById('audit-content').innerHTML = '<div class="empty-state">No audit logs yet</div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Timestamp</th><th>Event Type</th><th>Agent DID</th><th>Resource</th><th>Action</th><th>Result</th></tr></thead><tbody>';
+
+                data.logs.forEach(log => {
+                    const resultBadge = log.result === 'SUCCESS' ? 'badge-success' : 'badge-error';
+
+                    html += `
+                        <tr>
+                            <td>${new Date(log.timestamp).toLocaleString()}</td>
+                            <td><span class="badge badge-info">${log.event_type}</span></td>
+                            <td class="did-text">${log.agent_did}</td>
+                            <td>${log.resource}</td>
+                            <td>${log.action}</td>
+                            <td><span class="badge ${resultBadge}">${log.result}</span></td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('audit-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('audit-content').innerHTML = '<div class="empty-state">Error loading audit logs</div>';
+            }
+        }
+
+        // Load ANS registry
+        async function loadANSRegistry() {
+            try {
+                const response = await fetch('/api/ans/registry');
+                const data = await response.json();
+
+                if (data.entries.length === 0) {
+                    document.getElementById('ans-content').innerHTML = '<div class="empty-state">No ANS registrations yet</div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>ANS Name</th><th>Agent DID</th><th>Service Endpoint</th><th>Provider</th><th>Capabilities</th></tr></thead><tbody>';
+
+                data.entries.forEach(entry => {
+                    const capabilities = entry.capabilities.map(c => `<span class="capability-tag">${c}</span>`).join('');
+
+                    html += `
+                        <tr>
+                            <td class="did-text"><strong>${entry.ans_name}</strong></td>
+                            <td class="did-text">${entry.agent_did}</td>
+                            <td>${entry.service_endpoint}</td>
+                            <td>${entry.provider}</td>
+                            <td>${capabilities}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('ans-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('ans-content').innerHTML = '<div class="empty-state">Error loading ANS registry</div>';
+            }
+        }
+
+        // Load cloud credentials
+        async function loadCloudCredentials() {
+            try {
+                const response = await fetch('/api/cloud-credentials');
+                const data = await response.json();
+
+                if (data.credentials.length === 0) {
+                    document.getElementById('cloud-content').innerHTML = '<div class="empty-state">No cached cloud credentials</div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Cache Key</th><th>Access Key ID</th><th>Provider</th><th>Expires At</th></tr></thead><tbody>';
+
+                data.credentials.forEach(cred => {
+                    html += `
+                        <tr>
+                            <td class="did-text">${cred.cache_key}</td>
+                            <td class="did-text">${cred.access_key_id}</td>
+                            <td><span class="badge badge-info">${cred.provider}</span></td>
+                            <td>${cred.expires_at}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('cloud-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('cloud-content').innerHTML = '<div class="empty-state">Error loading cloud credentials</div>';
+            }
+        }
+
+        // Initial load
+        loadStats();
+        loadAgents();
+
+        // Auto-refresh stats every 5 seconds
+        setInterval(loadStats, 5000);
+    </script>
+</body>
+</html>
