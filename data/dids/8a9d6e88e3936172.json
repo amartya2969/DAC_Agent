@@ -1,0 +1,46 @@
+{
+  "did": "did:key:z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH",
+  "document": {
+    "@context": [
+      "https://www.w3.org/ns/did/v1",
+      "https://w3id.org/security/suites/ed25519-2020/v1"
+    ],
+    "id": "did:key:z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH",
+    "verificationMethod": [
+      {
+        "id": "did:key:z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH#z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH",
+        "type": "Ed25519VerificationKey2020",
+        "controller": "did:key:z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH",
+        "publicKeyMultibase": "z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH"
+      }
+    ],
+    "authentication": [
+      "did:key:z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH#z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH"
+    ],
+    "assertionMethod": [
+      "did:key:z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH#z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH"
+    ],
+    "capabilityInvocation": [
+      "did:key:z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH#z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH"
+    ],
+    "capabilityDelegation": [
+      "did:key:z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH#z6MktySHoGansnZ2bPHdWxr8uFJpZ9UyptX6hu4GvrXs5rbH"
+    ],
+    "agentMetadata": {
+      "name": "Agent Alpha - Financial Analyzer",
+      "model": "gpt-4-turbo",
+      "version": "2.0",
+      "provider": "ACME Corp",
+      "capabilities": [
+        "FinancialAnalysis",
+        "DatabaseAccess",
+        "ExternalAPIAccess"
+      ],
+      "toolset": [],
+      "scopeOfBehavior": "Analyzes financial data from cloud databases and APIs"
+    },
+    "lifecycleStatus": "active",
+    "created": "2026-01-05T17:34:09.219557Z",
+    "updated": "2026-01-05T17:34:09.219561Z"
+  }
+}
