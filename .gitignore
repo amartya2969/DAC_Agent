@@ -59,3 +59,9 @@ Thumbs.db
 *.pem
 *.key
 keys/
+
+# Go
+sidecar/dac-sidecar
+*.exe
+*.dll
+*.dylib
