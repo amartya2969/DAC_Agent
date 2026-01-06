@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # 1. THE BRAIN (Control Plane)
+  # This is your Python app (control-plane/src/).
+  # It issues DIDs, verifies VCs, and connects to AWS STS.
+  control-plane:
+    build:
+      context: ./control-plane
+      dockerfile: ../Dockerfile.control
+    ports:
+      - "5000:5000"  # API for Sidecar to request tokens
+      - "5001:5001"  # Dashboard UI
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DB_URI=sqlite:///data/dac.db
+      - AWS_SIMULATION=true
+      - GCP_SIMULATION=true
+      - AZURE_SIMULATION=true
+    depends_on:
+      - redis
+    networks:
+      - dac-mesh
+    volumes:
+      - ./data:/app/data
+      - ./control-plane:/app
+    command: python src/dashboard/app.py
+
+  # 2. THE MEMORY (State Store)
+  # Stores "Velocity Limits" (e.g., "Agent X used 50MB").
+  # Shared by Control Plane and Sidecar.
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    networks:
+      - dac-mesh
+    volumes:
+      - redis-data:/data
+
+  # 3. THE BOUNCER (The Sidecar)
+  # This is the new Go binary.
+  # It acts as the Gateway. The Agent CANNOT reach the internet without it.
+  sidecar:
+    build:
+      context: ./sidecar
+      dockerfile: ../Dockerfile.sidecar
+    ports:
+      - "8080:8080" # Proxy Port
+    environment:
+      - CONTROL_PLANE_URL=http://control-plane:5000
+      - REDIS_URL=redis:6379
+      - POLICY_LIMIT_MB_PER_MIN=50
+      - AGENT_DID=did:key:zMockAgentForTesting
+      - PROXY_PORT=8080
+    depends_on:
+      - control-plane
+      - redis
+    networks:
+      - dac-mesh
+
+  # 4. THE USER (The Mock Agent)
+  # A simple Python script that tries to access resources.
+  # Notice: It has NO internet access except via the Sidecar (http_proxy).
+  mock-agent:
+    image: python:3.11-slim
+    command: >
+      sh -c "pip install requests && python -u /app/agent_simulation.py"
+    volumes:
+      - ./simulation:/app
+    working_dir: /app
+    environment:
+      # CRITICAL: Forcing traffic through the Sidecar
+      - http_proxy=http://sidecar:8080
+      - https_proxy=http://sidecar:8080
+      - NO_PROXY=localhost,127.0.0.1
+      # The agent has NO AWS keys. It relies on the Sidecar to inject them.
+      - AGENT_DID=did:key:zMockAgentForTesting
+      - CONTROL_PLANE_URL=http://control-plane:5000
+    networks:
+      - dac-mesh
+    depends_on:
+      - sidecar
+      - control-plane
+
+networks:
+  dac-mesh:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
