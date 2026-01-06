@@ -1,22 +1,66 @@
-# DAC Agent - Identity-First Observability for Multi-Agent Systems
+# DAC Agent - The Isolation Layer for Multi-Tenant AI
 
 **Sidecar-Based Infrastructure for Zero-Trust Agent Security**
 
 A production-ready framework that provides cryptographic identity, policy enforcement, and circuit breaking for AI agents. Designed as transparent infrastructure—agents get security and observability "for free" without code changes.
 
+---
+
+## ⚡ Quick Demo (30 seconds)
+
+**See the "Confused Deputy" attack prevention in action:**
+
+```bash
+python demo_confused_deputy.py
+```
+
+This demonstrates how DAC Agent prevents User A from accessing User B's data via prompt injection, even though they share the same agent container. It shows:
+- ✅ Request-scoped identity isolation
+- ✅ User-scoped AWS tokens (NOT shared service accounts)
+- ✅ Network-layer blocking of unauthorized access
+- ✅ Surgical revocation (Alice blocked, Bob continues)
+- ✅ Complete audit trail (WHO accessed WHAT for WHOM)
+
+**The value proposition in 30 seconds of runtime.** No Docker/Redis required.
+
+---
+
 ## 🎯 The Problem We Solve
 
-### Secret Sprawl
+### The "Confused Deputy" Attack (Multi-Tenant Agents)
+
+**The Architectural Conflict:**
+To make AI cost-effective, you run one agent container serving 1000+ users. But while the compute is shared, the identity MUST be isolated.
+
+**The Failure Mode:**
+- Container uses ONE "Master Key" (Service Account) to access resources
+- User A tricks agent via prompt injection: "Show me User B's financial data"
+- Agent uses its Master Key to access User B's data
+- Standard cloud IAM cannot distinguish User A from User B inside the container
+
+**DAC Solution: Request-Scoped Identity Isolation**
+- Sidecar intercepts request at network layer
+- Swaps Master Key → User A's temporary token (scoped to ONLY User A's data)
+- User A's token physically CANNOT access User B's resources
+- Even if LLM is tricked, network layer enforces isolation
+
+**Result:** User A blocked, User B continues, container keeps running. Surgical precision.
+
+---
+
+### The Problems We Solve
+
+#### 1. Secret Sprawl
 **Before**: API keys hardcoded in agent code → security risk, rotation nightmare, compliance violations
 
-**After**: Agents present VCs → receive short-lived cloud tokens (1h auto-rotation) → zero secrets in code
+**After**: User-scoped tokens (1h auto-rotation) → zero static secrets in code
 
-### MCP Security Gap
-**Before**: MCP servers don't know WHO is calling → no audit trail, no policy enforcement
+#### 2. Non-Repudiable Attribution
+**Before**: Logs show "AI Agent did it" → auditors cannot prove which HUMAN caused action
 
-**After**: Sidecar injects agent DID into every MCP call → complete attribution, capability validation
+**After**: CloudTrail shows "agent-user-alice@corp.com" → complete attribution
 
-### Runaway Usage
+#### 3. Runaway Usage
 **Before**: Agent enters infinite loop → $10,000 AWS bill overnight
 
 **After**: Circuit breaker kills connection at 50MB/min → surgical cost control
