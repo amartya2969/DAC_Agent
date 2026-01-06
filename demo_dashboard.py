@@ -320,6 +320,11 @@ HTML_TEMPLATE = """
             background: #b91c1c;
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .audit-log {
             background: #1e293b;
             border: 1px solid #334155;
@@ -611,11 +616,32 @@ HTML_TEMPLATE = """
         }
 
         async function simulateAttack() {
+            console.log('🚀 Simulate attack button clicked');
+
+            // Disable button during request
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Simulating Attack...';
+
             try {
+                console.log('📤 Sending attack request to /api/attack');
                 showAlert('🚨 SIMULATING ATTACK: Alice attempting to access Bob\'s data via prompt injection...', 'danger');
 
-                const response = await fetch('/api/attack', { method: 'POST' });
+                const response = await fetch('/api/attack', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('📥 Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('📊 Response data:', data);
 
                 if (data.blocked) {
                     setTimeout(() => {
@@ -627,19 +653,54 @@ HTML_TEMPLATE = """
                     }, 4000);
                 }
 
-                updateDashboard();
+                // Force immediate update
+                await updateDashboard();
+
             } catch (error) {
-                console.error('Error simulating attack:', error);
+                console.error('❌ Error simulating attack:', error);
+                showAlert(`Error: ${error.message}. Check console for details.`, 'danger');
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.textContent = '💀 Simulate Prompt Injection Attack (Alice → Bob\'s Data)';
             }
         }
 
         async function resetDemo() {
+            console.log('🔄 Reset button clicked');
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Resetting...';
+
             try {
-                await fetch('/api/reset', { method: 'POST' });
-                showAlert('🔄 Demo reset successfully', 'success');
-                updateDashboard();
+                console.log('📤 Sending reset request to /api/reset');
+
+                const response = await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('📥 Reset response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('📊 Reset response data:', data);
+
+                showAlert('🔄 Demo reset successfully! Alice and Bob sessions restored.', 'success');
+                await updateDashboard();
+
             } catch (error) {
-                console.error('Error resetting demo:', error);
+                console.error('❌ Error resetting demo:', error);
+                showAlert(`Error: ${error.message}. Check console for details.`, 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Reset Demo';
             }
         }
 
