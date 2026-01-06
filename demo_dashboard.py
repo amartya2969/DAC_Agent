@@ -537,6 +537,7 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
+        console.log('✅ Dashboard script loaded');
         let updateInterval;
 
         function showAlert(message, type) {
@@ -704,9 +705,16 @@ HTML_TEMPLATE = """
             }
         }
 
+        // Make functions globally accessible
+        window.simulateAttack = simulateAttack;
+        window.resetDemo = resetDemo;
+        window.updateDashboard = updateDashboard;
+
         // Initial load and set up auto-refresh
+        console.log('🚀 Starting dashboard auto-refresh...');
         updateDashboard();
         updateInterval = setInterval(updateDashboard, 2000);
+        console.log('✅ Dashboard initialized successfully');
     </script>
 </body>
 </html>
