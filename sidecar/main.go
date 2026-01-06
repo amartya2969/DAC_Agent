@@ -19,8 +19,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -112,16 +110,38 @@ func main() {
 func (s *Sidecar) proxyHandler(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 
+	// Extract user context from headers (X-User-ID) or use agent DID as fallback
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		userID = s.config.AgentDID
+	}
+
+	// Extract session UUID from headers or generate placeholder
+	sessionUUID := r.Header.Get("X-Session-UUID")
+	if sessionUUID == "" {
+		sessionUUID = "session-" + time.Now().Format("20060102150405")
+	}
+
+	// Detect intent and target for audit logging
+	intent := detectIntent(r.Method, r.URL.Path)
+	target := extractTarget(r.Host, r.URL.Path)
+
 	log.Printf("\n📥 Incoming Request:")
 	log.Printf("   Method: %s", r.Method)
 	log.Printf("   URL: %s", r.URL.String())
-	log.Printf("   Agent: %s", s.config.AgentDID[:40]+"...")
+	log.Printf("   User: %s", userID)
+	log.Printf("   Session: %s", sessionUUID)
 
 	// STEP 1: Check Circuit Breaker (Pre-Flight)
 	allowed, reason := s.circuitBreaker.CheckLimit(r.Context())
 	if !allowed {
 		log.Printf("🚫 Circuit Breaker: Request BLOCKED")
 		log.Printf("   Reason: %s", reason)
+
+		// AUDIT LOG: Circuit breaker triggered
+		usage, _ := s.circuitBreaker.GetCurrentUsage(r.Context())
+		LogCircuitBreak(userID, reason, sessionUUID, usage)
+
 		http.Error(w, fmt.Sprintf("Circuit Breaker: %s", reason), http.StatusTooManyRequests)
 		return
 	}
@@ -131,6 +151,10 @@ func (s *Sidecar) proxyHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("🛡️  MCP Request detected - inspecting...")
 		if err := s.handleMCPRequest(w, r); err != nil {
 			log.Printf("❌ MCP Validation failed: %v", err)
+
+			// AUDIT LOG: MCP request blocked
+			LogBlocked(userID, target, "MCP:"+intent, err.Error(), sessionUUID)
+
 			return
 		}
 	}
@@ -192,7 +216,12 @@ func (s *Sidecar) proxyHandler(w http.ResponseWriter, r *http.Request) {
 	if responseSize > s.config.PolicyLimitMBPerMin*1024*1024 {
 		log.Printf("🚫 Circuit Breaker: Response TOO LARGE (%d bytes)", responseSize)
 		log.Println("   Killing connection immediately")
-		http.Error(w, "Response size limit exceeded", http.StatusPayloadTooLarge)
+
+		// AUDIT LOG: Response too large
+		reason := fmt.Sprintf("Response size %d MB exceeds limit %d MB", responseSize/(1024*1024), s.config.PolicyLimitMBPerMin)
+		LogBlocked(userID, target, intent, reason, sessionUUID)
+
+		http.Error(w, "Response size limit exceeded", http.StatusRequestEntityTooLarge)
 		return
 	}
 
@@ -206,6 +235,9 @@ func (s *Sidecar) proxyHandler(w http.ResponseWriter, r *http.Request) {
 	duration := time.Since(startTime)
 	log.Printf("✅ Request completed in %v", duration)
 	log.Printf("   Response: %d bytes (Status: %d)", responseSize, resp.StatusCode)
+
+	// AUDIT LOG: Successful request
+	LogTraffic(userID, target, intent, sessionUUID, int64(responseSize))
 }
 
 // getCredentialsFromControlPlane calls the control plane to get AWS credentials

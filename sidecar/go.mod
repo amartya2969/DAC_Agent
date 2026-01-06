@@ -2,10 +2,7 @@ module github.com/amartya2969/dac-sidecar
 
 go 1.21
 
-require (
-	github.com/go-redis/redis/v8 v8.11.5
-	github.com/gorilla/mux v1.8.1
-)
+require github.com/go-redis/redis/v8 v8.11.5
 
 require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
