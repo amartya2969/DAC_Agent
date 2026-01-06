@@ -1,0 +1,44 @@
+{
+  "did": "did:key:z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns",
+  "document": {
+    "@context": [
+      "https://www.w3.org/ns/did/v1",
+      "https://w3id.org/security/suites/ed25519-2020/v1"
+    ],
+    "id": "did:key:z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns",
+    "verificationMethod": [
+      {
+        "id": "did:key:z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns#z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns",
+        "type": "Ed25519VerificationKey2020",
+        "controller": "did:key:z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns",
+        "publicKeyMultibase": "z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns"
+      }
+    ],
+    "authentication": [
+      "did:key:z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns#z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns"
+    ],
+    "assertionMethod": [
+      "did:key:z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns#z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns"
+    ],
+    "capabilityInvocation": [
+      "did:key:z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns#z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns"
+    ],
+    "capabilityDelegation": [
+      "did:key:z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns#z6MkgrVFFMTmYFipi76LchyPqRj95QyitQa1vGZpfmt9tqns"
+    ],
+    "agentMetadata": {
+      "name": "ACME Trust Authority",
+      "model": "system",
+      "version": "1.0",
+      "provider": "ACME Corp",
+      "capabilities": [
+        "CredentialIssuance"
+      ],
+      "toolset": [],
+      "scopeOfBehavior": "Issues capability and compliance credentials for ACME agents"
+    },
+    "lifecycleStatus": "active",
+    "created": "2026-01-05T22:58:01.022398Z",
+    "updated": "2026-01-05T22:58:01.022404Z"
+  }
+}

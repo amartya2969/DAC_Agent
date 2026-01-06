@@ -455,7 +455,6 @@ HTML_TEMPLATE = """
         </div>
 
         <div class="grid">
-            <!-- Alice's Session -->
             <div class="card" id="alice-card">
                 <div class="card-header">
                     <h3 class="card-title">👤 Alice's Session</h3>
@@ -490,7 +489,6 @@ HTML_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- Bob's Session -->
             <div class="card" id="bob-card">
                 <div class="card-header">
                     <h3 class="card-title">👤 Bob's Session</h3>
@@ -531,8 +529,7 @@ HTML_TEMPLATE = """
                 <h3 class="card-title">📝 Audit Trail (Real-Time)</h3>
             </div>
             <div id="audit-entries">
-                <!-- Populated by JavaScript -->
-            </div>
+                </div>
         </div>
     </div>
 
@@ -626,7 +623,7 @@ HTML_TEMPLATE = """
 
             try {
                 console.log('📤 Sending attack request to /api/attack');
-                showAlert('🚨 SIMULATING ATTACK: Alice attempting to access Bob\'s data via prompt injection...', 'danger');
+                showAlert("🚨 SIMULATING ATTACK: Alice attempting to access Bob's data via prompt injection...", 'danger');
 
                 const response = await fetch('/api/attack', {
                     method: 'POST',
@@ -646,11 +643,11 @@ HTML_TEMPLATE = """
 
                 if (data.blocked) {
                     setTimeout(() => {
-                        showAlert('✅ ATTACK BLOCKED: Alice\'s token scope prevented access to Bob\'s resources!', 'success');
+                        showAlert("✅ ATTACK BLOCKED: Alice's token scope prevented access to Bob's resources!", 'success');
                     }, 2000);
 
                     setTimeout(() => {
-                        showAlert('🔪 SURGICAL REVOCATION: Alice\'s session terminated. Bob and 1,245 other users continue normally.', 'success');
+                        showAlert("🔪 SURGICAL REVOCATION: Alice's session terminated. Bob and 1,245 other users continue normally.", 'success');
                     }, 4000);
                 }
 
@@ -663,7 +660,7 @@ HTML_TEMPLATE = """
             } finally {
                 // Re-enable button
                 btn.disabled = false;
-                btn.textContent = '💀 Simulate Prompt Injection Attack (Alice → Bob\'s Data)';
+                btn.textContent = "💀 Simulate Prompt Injection Attack (Alice → Bob's Data)";
             }
         }
 
