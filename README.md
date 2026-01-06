@@ -6,22 +6,48 @@ A production-ready framework that provides cryptographic identity, policy enforc
 
 ---
 
-## ⚡ Quick Demo (30 seconds)
+## ⚡ Quick Demo - Choose Your Style
 
-**See the "Confused Deputy" attack prevention in action:**
+### Option 1: Interactive Web Dashboard (Recommended for Demos) 🎨
+
+**Visual, interactive demo with real-time updates:**
+
+```bash
+python demo_dashboard.py
+```
+
+Then open: **http://localhost:3000**
+
+**Features:**
+- 🎮 Interactive attack simulation button
+- 📊 Real-time session status monitoring
+- 🔐 Token scope visualization
+- 📝 Live audit trail with color coding
+- 🔴 Watch surgical revocation happen visually
+- 🔄 Reset button to run the demo multiple times
+
+**Perfect for:** Sales demos, investor pitches, conference presentations
+
+### Option 2: Terminal Demo (Quick & Simple) ⚡
+
+**30-second terminal-based walkthrough:**
 
 ```bash
 python demo_confused_deputy.py
 ```
 
-This demonstrates how DAC Agent prevents User A from accessing User B's data via prompt injection, even though they share the same agent container. It shows:
+**Shows:**
 - ✅ Request-scoped identity isolation
 - ✅ User-scoped AWS tokens (NOT shared service accounts)
 - ✅ Network-layer blocking of unauthorized access
 - ✅ Surgical revocation (Alice blocked, Bob continues)
 - ✅ Complete audit trail (WHO accessed WHAT for WHOM)
 
-**The value proposition in 30 seconds of runtime.** No Docker/Redis required.
+**Perfect for:** Technical deep-dives, documentation, quick verification
+
+---
+
+**Both demos run standalone - no Docker/Redis/Go required.**
 
 ---
 
