@@ -445,10 +445,10 @@ HTML_TEMPLATE = """
                 <h2 class="card-title">🎮 Demo Controls</h2>
             </div>
             <div class="button-group">
-                <button class="btn btn-attack" onclick="simulateAttack()">
+                <button class="btn btn-attack" id="attack-btn">
                     💀 Simulate Prompt Injection Attack (Alice → Bob's Data)
                 </button>
-                <button class="btn btn-reset" onclick="resetDemo()">
+                <button class="btn btn-reset" id="reset-btn">
                     🔄 Reset Demo
                 </button>
             </div>
@@ -706,6 +706,11 @@ HTML_TEMPLATE = """
         window.simulateAttack = simulateAttack;
         window.resetDemo = resetDemo;
         window.updateDashboard = updateDashboard;
+
+        // Attach event listeners to buttons
+        document.getElementById('attack-btn').addEventListener('click', simulateAttack);
+        document.getElementById('reset-btn').addEventListener('click', resetDemo);
+        console.log('✅ Event listeners attached to buttons');
 
         // Initial load and set up auto-refresh
         console.log('🚀 Starting dashboard auto-refresh...');
