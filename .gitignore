@@ -65,3 +65,6 @@ sidecar/dac-sidecar
 *.exe
 *.dll
 *.dylib
+
+# Leak test demo output
+leaktest-output/

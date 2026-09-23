@@ -8,6 +8,26 @@ A production-ready framework that provides cryptographic identity, policy enforc
 
 ## ⚡ Quick Demo - Choose Your Style
 
+### New: Shared Agent Memory Isolation 🧠
+
+Most multi-tenant agents keep every customer's memory in one vector store,
+separated only by a filter the model can influence. This demo runs 15
+cross-tenant attacks against a shared Qdrant collection, first directly and
+then through the sidecar's tenant guard:
+
+```bash
+pip install -r tools/leaktest/requirements.txt
+./scripts/memory_isolation_demo.sh
+```
+
+| | Attacks that leaked or damaged another tenant's data |
+|---|---|
+| Direct to store | 15 / 15 |
+| Through DAC sidecar | 0 / 15 (normal reads and writes still work) |
+
+See [docs/MEMORY_ISOLATION.md](docs/MEMORY_ISOLATION.md) for how the guard works and its limits, and
+[tools/leaktest](tools/leaktest/README.md) to run the leak test against your own store.
+
 ### Option 1: Interactive Web Dashboard (Recommended for Demos) 🎨
 
 **Visual, interactive demo with real-time updates:**

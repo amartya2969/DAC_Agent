@@ -96,6 +96,16 @@ func main() {
 	http.HandleFunc("/health", sidecar.healthHandler)
 	http.HandleFunc("/metrics", sidecar.metricsHandler)
 
+	// Tenant isolation for agent memory (vector store behind /vector/)
+	if storeURL := getEnv("VECTOR_STORE_URL", ""); storeURL != "" {
+		guard, err := NewTenantGuard(storeURL, getEnv("VECTOR_TENANT_KEY", "tenant_id"), os.Getenv("VECTOR_STORE_API_KEY"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		http.Handle(vectorRoutePrefix+"/", guard)
+		log.Printf("  Vector store: %s (tenant guard on %s/)", storeURL, vectorRoutePrefix)
+	}
+
 	addr := ":" + config.ProxyPort
 	log.Printf("\n✅ DAC Sidecar listening on %s", addr)
 	log.Println("   All agent traffic will be intercepted and validated")

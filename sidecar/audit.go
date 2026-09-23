@@ -13,9 +13,13 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 	"time"
 )
+
+// auditOut is where audit events are written (stdout; replaced in tests)
+var auditOut io.Writer = os.Stdout
 
 // AuditLog represents a single request event with complete attribution
 type AuditLog struct {
@@ -24,7 +28,7 @@ type AuditLog struct {
 	User      string `json:"user"`            // Extracted user ID (from session/VC)
 	Target    string `json:"target"`          // Target resource (e.g., "s3", "database")
 	Intent    string `json:"intent"`          // What they're trying to do
-	Outcome   string `json:"outcome"`         // "ALLOWED", "BLOCKED", "REVOKED"
+	Outcome   string `json:"outcome"`         // "ALLOWED", "BLOCKED", "REVOKED", "CONTAINED"
 	Reason    string `json:"reason,omitempty"` // Why it was blocked (if applicable)
 	Session   string `json:"session,omitempty"` // Session UUID for correlation
 	BytesSent int64  `json:"bytes_sent,omitempty"` // For circuit breaker tracking
@@ -42,7 +46,7 @@ func LogTraffic(user, target, intent, session string, bytesSent int64) {
 		Session:   session,
 		BytesSent: bytesSent,
 	}
-	json.NewEncoder(os.Stdout).Encode(entry)
+	json.NewEncoder(auditOut).Encode(entry)
 }
 
 // LogBlocked logs a blocked request (security enforcement)
@@ -57,7 +61,23 @@ func LogBlocked(user, target, intent, reason, session string) {
 		Reason:    reason,
 		Session:   session,
 	}
-	json.NewEncoder(os.Stdout).Encode(entry)
+	json.NewEncoder(auditOut).Encode(entry)
+}
+
+// LogContained logs a cross-tenant attempt that was neutralised: the request
+// went through, but only inside the caller's tenant
+func LogContained(user, target, intent, reason, session string) {
+	entry := AuditLog{
+		Timestamp: time.Now().Format(time.RFC3339),
+		Event:     "SECURITY_ALERT",
+		User:      user,
+		Target:    target,
+		Intent:    intent,
+		Outcome:   "CONTAINED",
+		Reason:    reason,
+		Session:   session,
+	}
+	json.NewEncoder(auditOut).Encode(entry)
 }
 
 // LogCircuitBreak logs a circuit breaker event
@@ -73,7 +93,7 @@ func LogCircuitBreak(user, reason, session string, bytesUsed int64) {
 		Session:   session,
 		BytesSent: bytesUsed,
 	}
-	json.NewEncoder(os.Stdout).Encode(entry)
+	json.NewEncoder(auditOut).Encode(entry)
 }
 
 // LogRevocation logs a session revocation event
@@ -88,7 +108,7 @@ func LogRevocation(user, session, reason string) {
 		Reason:    reason,
 		Session:   session,
 	}
-	json.NewEncoder(os.Stdout).Encode(entry)
+	json.NewEncoder(auditOut).Encode(entry)
 }
 
 // detectIntent extracts intent from request method and path
