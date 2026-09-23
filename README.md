@@ -20,6 +20,8 @@ pip install -r tools/leaktest/requirements.txt
 ./scripts/memory_isolation_demo.sh
 ```
 
+Results against Qdrant 1.19.1 (`QDRANT_URL=http://localhost:6333 ./scripts/memory_isolation_demo.sh`):
+
 | | Attacks that leaked or damaged another tenant's data |
 |---|---|
 | Direct to store | 15 / 15 |

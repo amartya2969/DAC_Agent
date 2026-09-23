@@ -91,6 +91,11 @@ class Harness:
             self.collection,
             vectors_config=models.VectorParams(size=DIM, distance=models.Distance.COSINE),
         )
+        # Qdrant's recommended setup for multi-tenancy; also required for facets.
+        self.admin.create_payload_index(
+            self.collection, TENANT_KEY,
+            field_schema=models.KeywordIndexParams(type=models.KeywordIndexType.KEYWORD, is_tenant=True),
+        )
         self.admin.upsert(self.collection, points=[
             models.PointStruct(id=pid, vector=embed(text), payload={TENANT_KEY: tenant, "text": text})
             for pid, tenant, text in SEED

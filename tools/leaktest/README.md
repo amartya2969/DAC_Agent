@@ -73,9 +73,11 @@ Use `--report report.md` for a Markdown report and `--json results.json` for
 raw results. When `--sidecar-url` is set, the exit code is 1 if anything leaks
 through the sidecar, so the test can gate CI.
 
-## Results against the test server
+## Results
 
-Measured with `scripts/memory_isolation_demo.sh`:
+Measured with `scripts/memory_isolation_demo.sh` against Qdrant 1.19.1 (the
+official `qdrant/qdrant` Docker image). The bundled test server gives the same
+results:
 
 | | Attacks that leaked or damaged bob's data | Sanity checks |
 |---|---|---|
