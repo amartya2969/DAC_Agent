@@ -27,6 +27,12 @@ Results against Qdrant 1.19.1 (`QDRANT_URL=http://localhost:6333 ./scripts/memor
 | Direct to store | 15 / 15 |
 | Through DAC sidecar | 0 / 15 (normal reads and writes still work) |
 
+With real frameworks (LangChain, LlamaIndex, Mem0), 12 of 14 cross-tenant
+scenarios leaked or changed another tenant's data directly; through the
+sidecar, 1 did (Mem0 history, which lives outside the vector store). See
+[docs/STACK_LEAK_REPORT.md](docs/STACK_LEAK_REPORT.md) and run
+`./scripts/stack_leaktest.sh`.
+
 See [docs/MEMORY_ISOLATION.md](docs/MEMORY_ISOLATION.md) for how the guard works and its limits, and
 [tools/leaktest](tools/leaktest/README.md) to run the leak test against your own store.
 

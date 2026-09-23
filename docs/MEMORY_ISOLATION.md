@@ -58,7 +58,11 @@ VECTOR_TENANT_KEY=tenant_id \
 |---|---|---|
 | `VECTOR_STORE_URL` | (off) | Qdrant REST endpoint; enables the guard |
 | `VECTOR_STORE_API_KEY` | (none) | Sent to the store as `api-key` |
-| `VECTOR_TENANT_KEY` | `tenant_id` | Payload key that holds the tenant |
+| `VECTOR_TENANT_KEY` | `tenant_id` | Payload key that holds the tenant; dotted paths such as `metadata.tenant_id` are supported |
+
+Framework defaults: LangChain stores metadata under `metadata`, so use
+`metadata.tenant_id`. LlamaIndex stores it at the top level (`tenant_id`).
+Mem0 scopes by `user_id`.
 
 Point the agent's Qdrant client at the sidecar and pass the tenant from the
 authenticated session:
@@ -76,7 +80,10 @@ client = QdrantClient(
 ```bash
 cd sidecar && go test ./...          # unit tests for rewriting, filtering and denial
 ./scripts/memory_isolation_demo.sh   # 15 attacks, direct vs through the sidecar
+./scripts/stack_leaktest.sh          # LangChain, LlamaIndex and Mem0 scenarios
 ```
+
+The framework results are in [STACK_LEAK_REPORT.md](STACK_LEAK_REPORT.md).
 
 See [`tools/leaktest/README.md`](../tools/leaktest/README.md) for the attack list
 and results.
@@ -92,6 +99,8 @@ and results.
   between the lookup and the upsert is not covered.
 - **Id-based writes to another tenant's points are skipped silently.** The store
   just finds no match, so they are logged as `ALLOWED`, not `CONTAINED`.
+- **Only data in the vector store is protected.** For example, Mem0 keeps
+  memory history in a local SQLite database, and the guard does not see it.
 - **Only the Qdrant REST API is covered.** gRPC traffic, other vector stores and
   memory layers are not yet supported.
 - **Some operations are refused, not supported.** This includes queries that

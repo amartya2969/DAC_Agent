@@ -358,6 +358,54 @@ func (g *TenantGuard) tenantCondition(tenant string) map[string]interface{} {
 	}
 }
 
+// tenantPath splits a dotted tenant key ("metadata.tenant_id") into its path.
+func (g *TenantGuard) tenantPath() []string {
+	return strings.Split(g.tenantKey, ".")
+}
+
+// touchesTenant reports whether a payload key is the tenant tag, inside it,
+// or one of its parent objects.
+func (g *TenantGuard) touchesTenant(key string) bool {
+	return key == g.tenantKey || strings.HasPrefix(key, g.tenantKey+".") || strings.HasPrefix(g.tenantKey, key+".")
+}
+
+// stampTenant writes the caller's tenant at path, noting any other value it replaces.
+func (g *TenantGuard) stampTenant(p map[string]interface{}, path []string, tenant string, res *guardResult, action string) {
+	if existing, ok := lookupPath(p, path); ok {
+		if s, isStr := existing.(string); !isStr || s != tenant {
+			res.contain("%s tried to set %s=%v; stamped %q", action, g.tenantKey, existing, tenant)
+		}
+	}
+	setPath(p, path, tenant)
+}
+
+func lookupPath(payload map[string]interface{}, path []string) (interface{}, bool) {
+	var cur interface{} = payload
+	for _, seg := range path {
+		m, ok := cur.(map[string]interface{})
+		if !ok {
+			return nil, false
+		}
+		if cur, ok = m[seg]; !ok {
+			return nil, false
+		}
+	}
+	return cur, true
+}
+
+func setPath(payload map[string]interface{}, path []string, value interface{}) {
+	cur := payload
+	for _, seg := range path[:len(path)-1] {
+		next, ok := cur[seg].(map[string]interface{})
+		if !ok {
+			next = map[string]interface{}{}
+			cur[seg] = next
+		}
+		cur = next
+	}
+	cur[path[len(path)-1]] = value
+}
+
 // scopeFilter returns a filter that matches only this tenant's points and,
 // within them, whatever the original filter matched.
 func (g *TenantGuard) scopeFilter(original interface{}, tenant string, res *guardResult) map[string]interface{} {
@@ -559,12 +607,7 @@ func (g *TenantGuard) scopeUpsert(ctx context.Context, collection string, req ma
 		if !ok {
 			return nil, fmt.Errorf("malformed payload")
 		}
-		if existing, has := p[g.tenantKey]; has {
-			if s, isStr := existing.(string); !isStr || s != tenant {
-				res.contain("write tried to set %s=%v; stamped %q", g.tenantKey, existing, tenant)
-			}
-		}
-		p[g.tenantKey] = tenant
+		g.stampTenant(p, g.tenantPath(), tenant, res, "write")
 		return p, nil
 	}
 
@@ -661,7 +704,8 @@ func (g *TenantGuard) pointOwners(ctx context.Context, collection string, ids []
 		}
 		owner := ""
 		if p, ok := pt["payload"].(map[string]interface{}); ok {
-			owner, _ = p[g.tenantKey].(string)
+			v, _ := lookupPath(p, g.tenantPath())
+			owner, _ = v.(string)
 		}
 		owners[fmt.Sprint(pt["id"])] = owner
 	}
@@ -672,13 +716,23 @@ func (g *TenantGuard) pointOwners(ctx context.Context, collection string, ids []
 func (g *TenantGuard) scopeSelectorWrite(name string, req map[string]interface{}, tenant string, res *guardResult) error {
 	switch name {
 	case "set-payload":
-		if key, ok := req["key"].(string); ok && (key == g.tenantKey || strings.HasPrefix(key, g.tenantKey+".")) {
-			return fmt.Errorf("the tenant tag cannot be modified")
+		// The payload is written at `key` (the root when absent). If it
+		// includes the tenant tag or one of its parent objects, the tag is
+		// forced to the caller's tenant.
+		path := g.tenantPath()
+		if key, ok := req["key"].(string); ok && key != "" {
+			switch {
+			case key == g.tenantKey || strings.HasPrefix(key, g.tenantKey+"."):
+				return fmt.Errorf("the tenant tag cannot be modified")
+			case strings.HasPrefix(g.tenantKey, key+"."):
+				path = strings.Split(strings.TrimPrefix(g.tenantKey, key+"."), ".")
+			default:
+				path = nil
+			}
 		}
-		if p, ok := req["payload"].(map[string]interface{}); ok {
-			if v, has := p[g.tenantKey]; has {
-				delete(p, g.tenantKey)
-				res.contain("payload update tried to set %s=%v; ignored", g.tenantKey, v)
+		if p, ok := req["payload"].(map[string]interface{}); ok && path != nil {
+			if _, touches := p[path[0]]; touches {
+				g.stampTenant(p, path, tenant, res, "payload update")
 			}
 		}
 	case "overwrite-payload":
@@ -686,16 +740,11 @@ func (g *TenantGuard) scopeSelectorWrite(name string, req map[string]interface{}
 		if !ok {
 			return fmt.Errorf("overwrite without payload")
 		}
-		if v, has := p[g.tenantKey]; has {
-			if s, isStr := v.(string); !isStr || s != tenant {
-				res.contain("payload overwrite tried to set %s=%v; stamped %q", g.tenantKey, v, tenant)
-			}
-		}
-		p[g.tenantKey] = tenant
+		g.stampTenant(p, g.tenantPath(), tenant, res, "payload overwrite")
 	case "delete-payload":
 		keys, _ := req["keys"].([]interface{})
 		for _, k := range keys {
-			if s, ok := k.(string); ok && (s == g.tenantKey || strings.HasPrefix(s, g.tenantKey+".")) {
+			if s, ok := k.(string); ok && g.touchesTenant(s) {
 				return fmt.Errorf("the tenant tag cannot be deleted")
 			}
 		}
@@ -790,7 +839,8 @@ func (g *TenantGuard) ownedBy(point map[string]interface{}, tenant string) bool 
 	if !ok {
 		return false
 	}
-	owner, ok := payload[g.tenantKey].(string)
+	v, _ := lookupPath(payload, g.tenantPath())
+	owner, ok := v.(string)
 	return ok && owner == tenant
 }
 

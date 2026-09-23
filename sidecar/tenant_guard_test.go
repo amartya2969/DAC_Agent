@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
@@ -338,8 +339,8 @@ func TestPayloadWritesCannotRetagPoints(t *testing.T) {
 	h := newHarness(t, nil)
 	h.do("POST", "/collections/mem/points/payload", "alice", `{"payload":{"tenant_id":"bob","text":"x"},"points":[1]}`)
 	payload := h.store.last().body["payload"].(map[string]interface{})
-	if _, ok := payload["tenant_id"]; ok {
-		t.Fatalf("set payload kept the tenant tag: %v", payload)
+	if payload["tenant_id"] != "alice" {
+		t.Fatalf("set payload must force the caller's tenant: %v", payload)
 	}
 
 	rec := h.do("POST", "/collections/mem/points/payload/delete", "alice", `{"keys":["tenant_id"],"points":[1]}`)
@@ -410,5 +411,55 @@ func TestLargePointIdsSurvive(t *testing.T) {
 	out, _ := json.Marshal(req)
 	if !strings.Contains(string(out), "18446744073709551615") {
 		t.Fatalf("point id lost precision: %s", out)
+	}
+}
+
+func TestNestedTenantKey(t *testing.T) {
+	store := &fakeStore{t: t, responses: map[string]string{
+		"POST /collections/mem/points": `{"result":[],"status":"ok"}`,
+		"POST /collections/mem/points/query": `{"result":{"points":[
+			{"id":1,"score":0.9,"payload":{"metadata":{"tenant_id":"alice"},"page_content":"mine"}},
+			{"id":2,"score":0.8,"payload":{"metadata":{"tenant_id":"bob"},"page_content":"secret"}}]},"status":"ok"}`,
+	}}
+	srv := httptest.NewServer(store)
+	defer srv.Close()
+	g, _ := NewTenantGuard(srv.URL, "metadata.tenant_id", "")
+	auditOut = &bytes.Buffer{}
+	defer func() { auditOut = os.Stdout }()
+	do := func(method, path, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, "/vector"+path, strings.NewReader(body))
+		req.Header.Set(tenantHeader, "alice")
+		rec := httptest.NewRecorder()
+		g.ServeHTTP(rec, req)
+		return rec
+	}
+
+	do("PUT", "/collections/mem/points", `{"points":[{"id":1,"vector":[0.1],"payload":{"page_content":"x","metadata":{"tenant_id":"bob","topic":"t"}}}]}`)
+	md := store.last().body["points"].([]interface{})[0].(map[string]interface{})["payload"].(map[string]interface{})["metadata"].(map[string]interface{})
+	if md["tenant_id"] != "alice" || md["topic"] != "t" {
+		t.Fatalf("nested tenant not stamped: %v", md)
+	}
+
+	rec := do("POST", "/collections/mem/points/query", `{"query":[0.1],"with_payload":true}`)
+	if strings.Contains(rec.Body.String(), "secret") || !strings.Contains(rec.Body.String(), "mine") {
+		t.Fatalf("nested ownership not enforced: %s", rec.Body)
+	}
+	f := canon(store.last().body["filter"])
+	if !strings.Contains(f, `"key":"metadata.tenant_id"`) {
+		t.Fatalf("filter uses wrong key: %s", f)
+	}
+
+	// Replacing the parent object must keep the caller's tenant.
+	do("POST", "/collections/mem/points/payload", `{"payload":{"metadata":{"topic":"new"}},"points":[1]}`)
+	md = store.last().body["payload"].(map[string]interface{})["metadata"].(map[string]interface{})
+	if md["tenant_id"] != "alice" {
+		t.Fatalf("parent object replaced without tenant: %v", md)
+	}
+	do("POST", "/collections/mem/points/payload", `{"payload":{"tenant_id":"bob"},"key":"metadata","points":[1]}`)
+	if store.last().body["payload"].(map[string]interface{})["tenant_id"] != "alice" {
+		t.Fatal("write under the parent key must keep the caller's tenant")
+	}
+	if rec := do("POST", "/collections/mem/points/payload/delete", `{"keys":["metadata"],"points":[1]}`); rec.Code != http.StatusForbidden {
+		t.Fatalf("deleting the parent of the tenant tag: status %d", rec.Code)
 	}
 }

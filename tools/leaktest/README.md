@@ -87,10 +87,21 @@ results:
 The direct results show what the store does when nothing enforces the
 boundary. They are not a bug in Qdrant: the store does what the request asks.
 
+## Agent frameworks
+
+`stacks.py` runs cross-tenant scenarios through LangChain, LlamaIndex and
+Mem0 on Qdrant, where the model controls a filter, a user id or a memory id:
+
+```bash
+pip install -r requirements-stacks.txt
+../../scripts/stack_leaktest.sh
+```
+
+Results and findings: [docs/STACK_LEAK_REPORT.md](../../docs/STACK_LEAK_REPORT.md).
+
 ## Limitations
 
 - Embeddings are a toy hash of words. Leaks do not depend on embedding quality.
 - The attacks call the Qdrant API directly. They stand in for what a hijacked
   agent's tool calls can produce. They are not prompts sent to a real model.
-- Only Qdrant is covered so far. pgvector, Pinecone, Chroma and memory layers
-  such as Mem0 are next.
+- Only Qdrant is covered so far. pgvector, Pinecone and Chroma are next.
