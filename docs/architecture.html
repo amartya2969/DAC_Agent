@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>DAC Agent Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #F4F7F6;
+  --surface: #FFFFFF;
+  --surface-2: #EAF0EF;
+  --ink: #16232B;
+  --muted: #56666E;
+  --line: #D3DDDB;
+  --accent: #1E6B74;
+  --accent-soft: #DCEBEC;
+  --guard: #B8741A;
+  --guard-soft: #FBEEDC;
+  --leak: #B23A30;
+  --leak-soft: #F8E1DE;
+  --safe: #2F7A4C;
+  --safe-soft: #DDEFE3;
+  --code-bg: #EDF2F1;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0F161A;
+    --surface: #162126;
+    --surface-2: #1C2A30;
+    --ink: #E2EAEC;
+    --muted: #97A7AE;
+    --line: #2A3A41;
+    --accent: #5EB2BB;
+    --accent-soft: #173238;
+    --guard: #E6A24F;
+    --guard-soft: #33271A;
+    --leak: #EE7F73;
+    --leak-soft: #3A1F1C;
+    --safe: #6CC08C;
+    --safe-soft: #16301F;
+    --code-bg: #121C20;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F161A;
+  --surface: #162126;
+  --surface-2: #1C2A30;
+  --ink: #E2EAEC;
+  --muted: #97A7AE;
+  --line: #2A3A41;
+  --accent: #5EB2BB;
+  --accent-soft: #173238;
+  --guard: #E6A24F;
+  --guard-soft: #33271A;
+  --leak: #EE7F73;
+  --leak-soft: #3A1F1C;
+  --safe: #6CC08C;
+  --safe-soft: #16301F;
+  --code-bg: #121C20;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  padding-inline: 20px;
+  padding-block: 40px 64px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 42px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 24px; font-weight: 600; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+.prose { max-width: 66ch; }
+.eyebrow {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+}
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lede { font-size: 19px; color: var(--muted); max-width: 62ch; }
+header { display: flex; flex-direction: column; gap: 14px; }
+.keyline { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--muted); }
+.keyline span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 7px; vertical-align: -1px; }
+.k-guard::before { background: var(--guard); }
+.k-accent::before { background: var(--accent); }
+.k-line::before { border: 1.5px solid var(--muted); }
+
+/* Diagram */
+.diagram { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.diagram svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.d-pod { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.d-box { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.2; }
+.d-side { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.d-route { fill: var(--surface); stroke: var(--accent); stroke-width: 1; }
+.d-guard { fill: var(--guard-soft); stroke: var(--guard); stroke-width: 2; }
+.d-store { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.2; }
+.d-qdrant { fill: var(--guard-soft); stroke: var(--guard); stroke-width: 1.5; }
+.t-title { fill: var(--ink); font-family: var(--sans); font-size: 15px; font-weight: 600; }
+.t-body { fill: var(--muted); font-family: var(--sans); font-size: 12.5px; }
+.t-mono { fill: var(--accent); font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
+.t-guard { fill: var(--guard); font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
+.t-label { fill: var(--muted); font-family: var(--mono); font-size: 11px; }
+.t-pod { fill: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; }
+.d-arrow { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.d-arrow-guard { stroke: var(--guard); stroke-width: 1.8; fill: none; }
+.d-head { fill: var(--muted); }
+.d-head-guard { fill: var(--guard); }
+
+.callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--guard-soft); border: 1px solid var(--guard); border-radius: 8px; padding: 14px 16px;
+}
+.callout strong { color: var(--ink); }
+.callout .mark { font-family: var(--mono); font-weight: 500; color: var(--guard); white-space: nowrap; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+th { font-size: 12px; font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--surface-2); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+pre {
+  margin: 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.55;
+  background: var(--code-bg); border-radius: 6px; padding: 12px; overflow-x: auto; color: var(--ink);
+}
+.hl { color: var(--guard); font-weight: 500; }
+.bad { color: var(--leak); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip { font-family: var(--mono); font-size: 12.5px; font-weight: 500; padding: 4px 10px; border-radius: 999px; border: 1px solid; }
+.c-allowed { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.c-contained { color: var(--guard); border-color: var(--guard); background: var(--guard-soft); }
+.c-blocked { color: var(--leak); border-color: var(--leak); background: var(--leak-soft); }
+.chip-row { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; align-items: baseline; font-size: 15px; }
+
+/* Evidence */
+.result { display: flex; flex-direction: column; gap: 14px; }
+.bar-row { display: grid; grid-template-columns: 9.5em 1fr 3.6em; gap: 12px; align-items: center; font-size: 14px; }
+.bar { height: 14px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; }
+.bar .leak { background: var(--leak); }
+.bar .safe { background: var(--safe); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; font-weight: 500; }
+.num.leak { color: var(--leak); }
+.num.safe { color: var(--safe); }
+.small { font-size: 14px; color: var(--muted); }
+
+ul.clean { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 8px; }
+ul.clean li::marker { color: var(--muted); }
+.files { display: grid; grid-template-columns: minmax(0, 20em) 1fr; gap: 10px 18px; font-size: 15px; }
+.files .mono { color: var(--accent); overflow-wrap: anywhere; font-size: 13.5px; }
+
+.status { font-family: var(--mono); font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.s-current { background: var(--safe-soft); color: var(--safe); }
+.s-old { background: var(--surface-2); color: var(--muted); }
+.s-planned { background: var(--accent-soft); color: var(--accent); }
+.s-stale { background: var(--leak-soft); color: var(--leak); }
+
+footer { border-top: 1px solid var(--line); padding-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+
+@media (max-width: 520px) {
+  body { padding-inline: 16px; }
+  .files { grid-template-columns: 1fr; gap: 2px 0; }
+  .files .mono { margin-top: 8px; }
+  .bar-row { grid-template-columns: 7.5em 1fr 3.2em; }
+}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">System overview · September 2026</div>
+  <h1>DAC Agent Architecture</h1>
+  <p class="lede">A sidecar that keeps each customer's data separate inside shared AI agents. The current focus is shared agent memory: many customers' memories in one vector store, where one bad filter exposes everyone.</p>
+</header>
+
+<section aria-labelledby="runtime">
+  <h2 id="runtime">How the pieces fit</h2>
+  <p class="prose">The agent keeps working as it does today. All of its traffic goes through the DAC sidecar, which sits in the same pod and enforces the customer boundary on the way out and on the way back.</p>
+  <div class="keyline">
+    <span class="k-guard">Tenant guard (new core)</span>
+    <span class="k-accent">DAC sidecar</span>
+    <span class="k-line">Agent pod boundary</span>
+  </div>
+  <div class="diagram" role="img" aria-label="Architecture diagram: the shared agent sends all traffic to the DAC sidecar in the same pod. The sidecar's cloud-API route talks to the control plane, Redis and cloud APIs; its tenant guard route sits in front of the shared Qdrant collection.">
+    <svg viewBox="0 0 1000 580" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker>
+        <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head-guard"/></marker>
+      </defs>
+
+      <!-- Control plane -->
+      <rect x="300" y="18" width="340" height="132" rx="8" class="d-box"/>
+      <text x="318" y="46" class="t-title">Control plane (Python)</text>
+      <text x="318" y="72" class="t-body">Agent identities (DIDs) and verifiable credentials</text>
+      <text x="318" y="94" class="t-body">Credential bridge to AWS, GCP and Azure</text>
+      <text x="318" y="116" class="t-body">Agent Naming Service · admin dashboard</text>
+      <text x="318" y="138" class="t-label">control-plane/src/</text>
+
+      <!-- Pod -->
+      <rect x="20" y="186" width="650" height="376" rx="12" class="d-pod"/>
+      <text x="38" y="208" class="t-pod">AGENT POD / CONTAINER</text>
+
+      <!-- Agent -->
+      <rect x="40" y="252" width="200" height="206" rx="8" class="d-box"/>
+      <text x="58" y="282" class="t-title">Shared AI agent</text>
+      <text x="58" y="306" class="t-body">LangChain · LlamaIndex · Mem0</text>
+      <text x="58" y="328" class="t-body">or your own code</text>
+      <text x="58" y="362" class="t-body">Sets the customer from</text>
+      <text x="58" y="382" class="t-body">the logged-in session:</text>
+      <text x="58" y="406" class="t-mono">X-Tenant-ID</text>
+      <text x="58" y="428" class="t-mono">X-User-ID</text>
+
+      <!-- Sidecar -->
+      <rect x="300" y="222" width="350" height="290" rx="10" class="d-side"/>
+      <text x="318" y="250" class="t-title">DAC sidecar (Go)</text>
+
+      <rect x="318" y="264" width="314" height="96" rx="6" class="d-route"/>
+      <text x="334" y="288" class="t-mono">/</text>
+      <text x="352" y="288" class="t-title" style="font-size:14px">Cloud-API proxy</text>
+      <text x="334" y="312" class="t-body">Circuit breaker (usage limits) · MCP inspector</text>
+      <text x="334" y="334" class="t-body">Injects user-scoped cloud credentials</text>
+
+      <rect x="318" y="374" width="314" height="122" rx="6" class="d-guard"/>
+      <text x="334" y="398" class="t-guard">/vector/</text>
+      <text x="404" y="398" class="t-title" style="font-size:14px">Tenant guard</text>
+      <text x="334" y="422" class="t-body">Adds the customer filter to every read</text>
+      <text x="334" y="444" class="t-body">Stamps writes; blocks overwrites</text>
+      <text x="334" y="466" class="t-body">Removes other customers' results</text>
+      <text x="334" y="488" class="t-body">Refuses anything it doesn't recognise</text>
+
+      <text x="318" y="540" class="t-label">Every request → audit event: ALLOWED · CONTAINED · BLOCKED</text>
+
+      <!-- Agent to sidecar -->
+      <path d="M240 355 H298" class="d-arrow" marker-end="url(#ah)"/>
+      <text x="249" y="346" class="t-label">HTTP</text>
+
+      <!-- Proxy to control plane -->
+      <path d="M470 264 V152" class="d-arrow" marker-end="url(#ah)"/>
+      <text x="478" y="200" class="t-label">exchange credential</text>
+
+      <!-- Right column -->
+      <rect x="730" y="96" width="250" height="70" rx="8" class="d-store"/>
+      <text x="748" y="124" class="t-title">Redis</text>
+      <text x="748" y="148" class="t-body">Circuit-breaker usage counters</text>
+
+      <rect x="730" y="222" width="250" height="78" rx="8" class="d-store"/>
+      <text x="748" y="250" class="t-title">AWS · GCP · Azure APIs</text>
+      <text x="748" y="274" class="t-body">Called with user-scoped tokens</text>
+
+      <rect x="730" y="380" width="250" height="110" rx="8" class="d-qdrant"/>
+      <text x="748" y="408" class="t-title">Qdrant vector store</text>
+      <text x="748" y="432" class="t-body">One shared collection holds</text>
+      <text x="748" y="452" class="t-body">every customer's agent memory</text>
+      <text x="748" y="476" class="t-label">api-key held by the sidecar only</text>
+
+      <path d="M632 280 L728 152" class="d-arrow" marker-end="url(#ah)"/>
+      <path d="M632 312 H728" class="d-arrow" marker-end="url(#ah)"/>
+      <path d="M632 435 H728" class="d-arrow-guard" marker-end="url(#ahg)"/>
+    </svg>
+  </div>
+  <div class="callout">
+    <span class="mark">TRUST</span>
+    <p><strong>The customer always comes from the logged-in session, never from the model.</strong> The model can write any filter it likes; the sidecar still combines it with <code>tenant = the session's customer</code> before anything reaches the store.</p>
+  </div>
+</section>
+
+<section aria-labelledby="guard">
+  <h2 id="guard">What the tenant guard enforces</h2>
+  <p class="prose">The guard speaks Qdrant's REST API. Frameworks need one change: point their Qdrant client at the sidecar. Each framework stores the customer under a different field (<code>metadata.tenant_id</code>, <code>tenant_id</code>, <code>user_id</code>), set per sidecar.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Operation</th><th>What the guard does</th></tr></thead>
+      <tbody>
+        <tr><td>Reads</td><td>Search, query, scroll, count and facet all get the customer filter ANDed in, including every sub-query.</td></tr>
+        <tr><td>Writes</td><td>Every record is stamped with the caller's customer. Overwriting another customer's record is refused.</td></tr>
+        <tr><td>Changes by ID</td><td>Deletes and updates by record ID only match the caller's own records. The customer tag can't be changed or removed.</td></tr>
+        <tr><td>Responses</td><td>Checked again on the way back. Records from other customers are removed.</td></tr>
+        <tr><td>Everything else</td><td>Refused by default: dropping collections, snapshots, queries that reuse other records, bulk rewrites.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="two">
+    <div class="panel">
+      <h3>A rewritten request</h3>
+      <p class="small">Alice's agent is tricked into asking for Bob's records.</p>
+<pre>model sends
+{"must":[{"key":"tenant_id","match":{"value":<span class="bad">"bob"</span>}}]}
+
+Qdrant receives
+{"must":[
+  <span class="hl">{"key":"tenant_id","match":{"value":"alice"}}</span>,
+  {"must":[{"key":"tenant_id","match":{"value":"bob"}}]}
+]}                         → matches nothing of Bob's</pre>
+    </div>
+    <div class="panel">
+      <h3>Audit outcomes</h3>
+      <div class="chip-row">
+        <span class="chip c-allowed">ALLOWED</span><span>Normal traffic.</span>
+        <span class="chip c-contained">CONTAINED</span><span>A cross-customer attempt ran, but only inside the caller's own data.</span>
+        <span class="chip c-blocked">BLOCKED</span><span>Refused outright.</span>
+      </div>
+<pre>{"event":"SECURITY_ALERT","user":"alice@example.test",
+ "intent":"query","outcome":<span class="hl">"CONTAINED"</span>,
+ "reason":"filter referenced another tenant;
+           scoped to \"alice\""}</pre>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="evidence">
+  <h2 id="evidence">Evidence</h2>
+  <p class="prose">Both suites run twice against a real Qdrant 1.19.1 server: once straight to the store, once through the sidecar. Results are checked against what is actually in the store, and normal reads and writes are checked too, so a clean result can't come from a broken setup.</p>
+  <div class="two">
+    <div class="panel result">
+      <h3>Direct attacks on shared memory</h3>
+      <p class="small">15 attacks as Alice: missing or rewritten filters, dumping the collection, guessing IDs, overwriting, planting, editing and deleting Bob's memories, dropping the collection.</p>
+      <div class="bar-row"><span>Straight to store</span><div class="bar"><i class="leak" style="width:100%"></i></div><span class="num leak">15/15</span></div>
+      <div class="bar-row"><span>Through sidecar</span><div class="bar"><i class="safe" style="width:0%"></i></div><span class="num safe">0/15</span></div>
+      <p class="small">Through the sidecar, 2 were refused and 13 ran but stayed inside Alice's data. Alice's own search, write and delete all worked.</p>
+    </div>
+    <div class="panel result">
+      <h3>Real agent frameworks</h3>
+      <p class="small">14 cross-customer scenarios through LangChain, LlamaIndex and Mem0, each using the framework's own multi-customer pattern. The model is scripted to behave as a tricked or careless model would.</p>
+      <div class="bar-row"><span>Straight to store</span><div class="bar"><i class="leak" style="width:85.7%"></i></div><span class="num leak">12/14</span></div>
+      <div class="bar-row"><span>Through sidecar</span><div class="bar"><i class="leak" style="width:7.1%"></i></div><span class="num leak">1/14</span></div>
+      <p class="small">The remaining leak is Mem0's memory history, which lives in a local file the sidecar never sees. Most leaks come from frameworks leaving isolation to app code.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="tests">
+  <h2 id="tests">Test layer</h2>
+  <div class="files">
+    <span class="mono">sidecar/tenant_guard_test.go</span><span>17 unit tests: request rewriting, response filtering, nested customer fields, refused operations.</span>
+    <span class="mono">tools/leaktest/leaktest.py</span><span>The 15 direct attacks plus 3 checks that normal use still works.</span>
+    <span class="mono">tools/leaktest/stacks.py</span><span>The framework scenarios, with pinned framework versions.</span>
+    <span class="mono">tools/leaktest/qdrant_test_server.py</span><span>Qdrant-compatible server for machines without Qdrant.</span>
+    <span class="mono">scripts/memory_isolation_demo.sh</span><span>One command: store, sidecar and the 15 attacks.</span>
+    <span class="mono">scripts/stack_leaktest.sh</span><span>One command: Qdrant, one sidecar per framework, all scenarios.</span>
+  </div>
+</section>
+
+<section aria-labelledby="status">
+  <h2 id="status">Status</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Piece</th><th>State</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Tenant guard</td><td><span class="status s-current">Current</span></td><td>Tested against real Qdrant 1.19.1.</td></tr>
+        <tr><td>Leak tests</td><td><span class="status s-current">Current</span></td><td>Direct attacks and three frameworks.</td></tr>
+        <tr><td>Cloud-API proxy</td><td><span class="status s-old">Earlier work</span></td><td>Circuit breaker, MCP inspector, credential injection. Not re-tested this round.</td></tr>
+        <tr><td>Control plane</td><td><span class="status s-old">Earlier work</span></td><td>Identities, credentials, cloud bridge, naming service.</td></tr>
+        <tr><td>S3 confused-deputy demos</td><td><span class="status s-old">Earlier pitch</span></td><td>Web dashboard and terminal walkthrough with hardcoded data.</td></tr>
+        <tr><td>Memory-isolation dashboard</td><td><span class="status s-planned">Planned</span></td><td>Live before-and-after of a framework leak.</td></tr>
+        <tr><td>Pitch deck</td><td><span class="status s-stale">Out of date</span></td><td>Needs rewriting around memory isolation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="gaps">
+  <h2 id="gaps">Known gaps</h2>
+  <ul class="clean prose">
+    <li><strong>The customer comes from a plain header.</strong> The next step is a signed session token from the control plane, which also connects the two halves of the system.</li>
+    <li><strong>Only Qdrant's REST API is covered.</strong> Not gRPC, pgvector, Pinecone or Chroma, and nothing stored outside the vector store.</li>
+    <li><strong>The overwrite check has a small race window</strong> between checking a record's owner and writing it.</li>
+    <li><strong>Docker packaging needs fixing.</strong> The sidecar's Dockerfile has broken paths, so the compose build fails.</li>
+  </ul>
+</section>
+
+<footer>
+  <h3>Reproduce</h3>
+<pre>docker run -p 6333:6333 qdrant/qdrant
+QDRANT_URL=http://localhost:6333 ./scripts/memory_isolation_demo.sh
+pip install -r tools/leaktest/requirements-stacks.txt
+./scripts/stack_leaktest.sh</pre>
+  <p class="small">Figures from runs on 23–24 September 2026. Models in the framework tests are scripted, so the results measure what each stack does with a model's output, not how easily a given model is tricked.</p>
+</footer>
+
+</div>
+
+</body>
+</html>

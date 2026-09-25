@@ -33,6 +33,8 @@ sidecar, 1 did (Mem0 history, which lives outside the vector store). See
 [docs/STACK_LEAK_REPORT.md](docs/STACK_LEAK_REPORT.md) and run
 `./scripts/stack_leaktest.sh`.
 
+For the whole system on one page, open [docs/architecture.html](docs/architecture.html).
+
 See [docs/MEMORY_ISOLATION.md](docs/MEMORY_ISOLATION.md) for how the guard works and its limits, and
 [tools/leaktest](tools/leaktest/README.md) to run the leak test against your own store.
 
